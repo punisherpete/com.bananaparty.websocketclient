@@ -15,9 +15,9 @@ namespace BananaParty.WebSocketClient
 
         public bool IsConnected => _webSocketClient != null && _webSocketClient.IsConnected;
 
-        public bool HasUnreadReceiveQueue => _webSocketClient != null ? _webSocketClient.HasUnreadReceiveQueue : throw new InvalidOperationException($"Trying to use {nameof(HasUnreadReceiveQueue)} before calling {nameof(Connect)}.");
+        public bool HasUnreadPayloadQueue => _webSocketClient != null ? _webSocketClient.HasUnreadPayloadQueue : throw new InvalidOperationException($"Trying to use {nameof(HasUnreadPayloadQueue)} before calling {nameof(Connect)}.");
 
-        public byte[] ReadReceiveQueue() => _webSocketClient != null ? _webSocketClient.ReadReceiveQueue() : throw new InvalidOperationException($"Trying to use {nameof(ReadReceiveQueue)} before calling {nameof(Connect)}.");
+        public byte[] ReadPayloadQueue() => _webSocketClient != null ? _webSocketClient.ReadPayloadQueue() : throw new InvalidOperationException($"Trying to use {nameof(ReadPayloadQueue)} before calling {nameof(Connect)}.");
 
         public void Connect()
         {
@@ -30,12 +30,12 @@ namespace BananaParty.WebSocketClient
             _webSocketClient.Connect();
         }
 
-        public void Send(byte[] bytesToSend)
+        public void Send(byte[] payloadBytes)
         {
             if (!IsConnected)
                 throw new InvalidOperationException($"Trying to use {nameof(Send)} while not {nameof(IsConnected)}.");
 
-            _webSocketClient.Send(bytesToSend);
+            _webSocketClient.Send(payloadBytes);
         }
 
         public void Disconnect()

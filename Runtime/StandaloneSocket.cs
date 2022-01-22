@@ -9,21 +9,20 @@ namespace BananaParty.WebSocketClient
 {
     public class StandaloneSocket : ISocket
     {
-        private const int TransportMaxReceiveChunkSize = 1024;
-        private const int TransportMaxSendChunkSize = 1024;
+        private const int MaxPayloadChunkSize = 1024;
 
         private readonly Uri _serverUri;
 
         private readonly ClientWebSocket _clientWebSocket = new();
         private readonly CancellationTokenSource _disconnectTokenSource = new();
 
-        private readonly Queue<byte[]> _receiveQueue = new();
+        private readonly Queue<byte[]> _payloadQueue = new();
 
         public bool IsConnected => _clientWebSocket.State == WebSocketState.Open;
 
-        public bool HasUnreadReceiveQueue => _receiveQueue.Count > 0;
+        public bool HasUnreadPayloadQueue => _payloadQueue.Count > 0;
 
-        public byte[] ReadReceiveQueue() => _receiveQueue.Dequeue();
+        public byte[] ReadPayloadQueue() => _payloadQueue.Dequeue();
 
         public StandaloneSocket(string serverAddress)
         {
@@ -40,23 +39,23 @@ namespace BananaParty.WebSocketClient
             _disconnectTokenSource.Cancel();
         }
 
-        public void Send(byte[] bytesToSend)
+        public void Send(byte[] payloadBytes)
         {
-            SendAsync(bytesToSend);
+            SendAsync(payloadBytes);
         }
 
-        private async void SendAsync(byte[] bytesToSend)
+        private async void SendAsync(byte[] payloadBytes)
         {
             if (!IsConnected)
                 throw new InvalidOperationException($"Connection is not open. State = {_clientWebSocket.State}");
 
-            int bytesSent = 0;
-            while (bytesSent < bytesToSend.Length)
+            int payloadBytesSent = 0;
+            while (payloadBytesSent < payloadBytes.Length)
             {
-                var bytesSegment = new ArraySegment<byte>(bytesToSend, bytesSent, Math.Min(bytesToSend.Length - bytesSent, TransportMaxSendChunkSize));
-                bool isFinalChunk = bytesSegment.Offset + bytesSegment.Count >= bytesToSend.Length;
-                await _clientWebSocket.SendAsync(bytesSegment, WebSocketMessageType.Binary, isFinalChunk, _disconnectTokenSource.Token);
-                bytesSent += bytesSegment.Count;
+                var payloadBytesSegment = new ArraySegment<byte>(payloadBytes, payloadBytesSent, Math.Min(payloadBytes.Length - payloadBytesSent, MaxPayloadChunkSize));
+                bool isFinalChunk = payloadBytesSegment.Offset + payloadBytesSegment.Count >= payloadBytes.Length;
+                await _clientWebSocket.SendAsync(payloadBytesSegment, WebSocketMessageType.Binary, isFinalChunk, _disconnectTokenSource.Token);
+                payloadBytesSent += payloadBytesSegment.Count;
             }
         }
 
@@ -76,14 +75,14 @@ namespace BananaParty.WebSocketClient
             if (!connectTask.IsCompletedSuccessfully)
                 goto ConnectionAborted;
 
-            var receiveBuffer = new ArraySegment<byte>(new byte[TransportMaxReceiveChunkSize]);
+            byte[] payloadBytesBuffer = new byte[MaxPayloadChunkSize];
             WebSocketReceiveResult result;
             do
             {
-                var arrayBufferWriter = new ArrayBufferWriter<byte>();
+                var payloadWriter = new ArrayBufferWriter<byte>();
                 do
                 {
-                    Task<WebSocketReceiveResult> receiveTask = _clientWebSocket.ReceiveAsync(receiveBuffer, _disconnectTokenSource.Token);
+                    Task<WebSocketReceiveResult> receiveTask = _clientWebSocket.ReceiveAsync(payloadBytesBuffer, _disconnectTokenSource.Token);
                     // Workaround for bug where it awaits forever if server connection is gone.
                     while (!receiveTask.IsCompleted)
                     {
@@ -100,11 +99,11 @@ namespace BananaParty.WebSocketClient
 
                     result = receiveTask.Result;
 
-                    arrayBufferWriter.Write(receiveBuffer.Slice(0, result.Count));
+                    payloadWriter.Write(new ArraySegment<byte>(payloadBytesBuffer, 0, result.Count));
                 }
                 while (!result.EndOfMessage);
 
-                _receiveQueue.Enqueue(arrayBufferWriter.WrittenSpan.ToArray());
+                _payloadQueue.Enqueue(payloadWriter.WrittenSpan.ToArray());
             }
             while (result.MessageType != WebSocketMessageType.Close);
 

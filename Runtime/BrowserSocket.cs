@@ -18,25 +18,25 @@ namespace BananaParty.WebSocketClient
         [DllImport("__Internal")]
         private static extern bool GetBrowserSocketIsConnected(int socketIndex);
 
-        public bool HasUnreadReceiveQueue => GetBrowserSocketHasUnreadReceiveQueue(_socketIndex);
+        public bool HasUnreadPayloadQueue => GetBrowserSocketHasUnreadPayloadQueue(_socketIndex);
 
         [DllImport("__Internal")]
-        private static extern bool GetBrowserSocketHasUnreadReceiveQueue(int socketIndex);
+        private static extern bool GetBrowserSocketHasUnreadPayloadQueue(int socketIndex);
 
-        public byte[] ReadReceiveQueue()
+        public byte[] ReadPayloadQueue()
         {
-            int receivedBytesCount = BrowserSocketReadReceiveQueue(_socketIndex, null, 0);
-            byte[] _receivedBytesBuffer = new byte[receivedBytesCount];
-            BrowserSocketReadReceiveQueue(_socketIndex, _receivedBytesBuffer, _receivedBytesBuffer.Length);
-            return _receivedBytesBuffer;
+            int payloadBytesCount = BrowserSocketReadPayloadQueue(_socketIndex, null, 0);
+            byte[] payloadBytesBuffer = new byte[payloadBytesCount];
+            BrowserSocketReadPayloadQueue(_socketIndex, payloadBytesBuffer, payloadBytesBuffer.Length);
+            return payloadBytesBuffer;
         }
 
         /// <summary>
-        /// Does not remove item from the queue if it's not going to fit in <paramref name="byteBufferLength"/>.
+        /// Does not remove item from the queue if it's not going to fit in <paramref name="payloadBytesBufferLength"/>.
         /// </summary>
         /// <returns>Received bytes count.</returns>
         [DllImport("__Internal")]
-        private static extern int BrowserSocketReadReceiveQueue(int socketIndex, byte[] byteBuffer, int byteBufferLength);
+        private static extern int BrowserSocketReadPayloadQueue(int socketIndex, byte[] payloadBytesBuffer, int payloadBytesBufferLength);
 
         public void Connect()
         {
@@ -46,13 +46,13 @@ namespace BananaParty.WebSocketClient
         [DllImport("__Internal")]
         private static extern int BrowserSocketConnect(string serverAddress);
 
-        public void Send(byte[] bytesToSend)
+        public void Send(byte[] payloadBytes)
         {
-            BrowserSocketSend(_socketIndex, bytesToSend, bytesToSend.Length);
+            BrowserSocketSend(_socketIndex, payloadBytes, payloadBytes.Length);
         }
 
         [DllImport("__Internal")]
-        private static extern void BrowserSocketSend(int socketIndex, byte[] bytesToSend, int bytesToSendCount);
+        private static extern void BrowserSocketSend(int socketIndex, byte[] payloadBytes, int payloadBytesCount);
 
         public void Disconnect()
         {

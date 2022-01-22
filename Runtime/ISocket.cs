@@ -4,16 +4,16 @@ namespace BananaParty.WebSocketClient
     {
         bool IsConnected { get; }
 
-        bool HasUnreadReceiveQueue { get; }
+        bool HasUnreadPayloadQueue { get; }
 
-        byte[] ReadReceiveQueue();
+        byte[] ReadPayloadQueue();
 
         /// <summary>
         /// Operation is not immediate. Check <see cref="IsConnected"/> for connection status.
         /// </summary>
         void Connect();
 
-        void Send(byte[] bytesToSend);
+        void Send(byte[] payloadBytes);
 
         /// <summary>
         /// Operation is not immediate. Check <see cref="IsConnected"/> for connection status.

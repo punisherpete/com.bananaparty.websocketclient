@@ -9,31 +9,31 @@ const library = {
       return browserSocket.sockets[socketIndex].webSocket.readyState === WebSocket.OPEN;
     },
 
-    getBrowserSocketHasUnreadReceiveQueue: function (socketIndex) {
-      return browserSocket.sockets[socketIndex].receiveQueue.length > 0;
+    getBrowserSocketHasUnreadPayloadQueue: function (socketIndex) {
+      return browserSocket.sockets[socketIndex].payloadQueue.length > 0;
     },
 
-    browserSocketReadReceiveQueue: function (socketIndex, byteBufferPtr, byteBufferLength) {
-      const receivedBytesLength = browserSocket.sockets[socketIndex].receiveQueue[0].length;
-      if (byteBufferLength < receivedBytesLength)
-        return receivedBytesLength;
+    browserSocketReadPayloadQueue: function (socketIndex, payloadBytesBufferPtr, payloadBytesBufferLength) {
+      const payloadBytesCount = browserSocket.sockets[socketIndex].payloadQueue[0].length;
+      if (payloadBytesBufferLength < payloadBytesCount)
+        return payloadBytesCount;
 
-      const receivedBytes = browserSocket.sockets[socketIndex].receiveQueue.shift();
-      HEAPU8.set(receivedBytes, byteBufferPtr);
-      return receivedBytesLength;
+      const payloadBytes = browserSocket.sockets[socketIndex].payloadQueue.shift();
+      HEAPU8.set(payloadBytes, payloadBytesBufferPtr);
+      return payloadBytesCount;
     },
 
     browserSocketConnect: function (serverAddress) {
       const webSocket = new WebSocket(serverAddress);
       webSocket.binaryType = 'arraybuffer';
 
-      const receiveQueue = [];
+      const payloadQueue = [];
 
       webSocket.onmessage = function (messageEvent) {
         if (messageEvent.data instanceof ArrayBuffer) {
-          receiveQueue.push(new Uint8Array(messageEvent.data));
+          payloadQueue.push(new Uint8Array(messageEvent.data));
         } else if (typeof messageEvent.data === 'string') {
-          receiveQueue.push(new TextEncoder().encode(messageEvent.data));
+          payloadQueue.push(new TextEncoder().encode(messageEvent.data));
         } else if (messageEvent.data instanceof Blob) {
           console.error('Blob message type not supported. messageEvent.data=' + messageEvent.data);
         } else {
@@ -41,14 +41,14 @@ const library = {
         }
       }
 
-      const socket = { webSocket: webSocket, receiveQueue: receiveQueue };
+      const socket = { webSocket: webSocket, payloadQueue: payloadQueue };
 
       const socketIndex = browserSocket.sockets.push(socket) - 1;
       return socketIndex;
     },
 
-    browserSocketSend: function (socketIndex, bytesToSend) {
-      browserSocket.sockets[socketIndex].webSocket.send(bytesToSend);
+    browserSocketSend: function (socketIndex, payloadBytes) {
+      browserSocket.sockets[socketIndex].webSocket.send(payloadBytes);
     },
 
     browserSocketDisconnect: function (socketIndex) {
@@ -63,12 +63,12 @@ const library = {
     return browserSocket.getBrowserSocketIsConnected(socketIndex);
   },
 
-  GetBrowserSocketHasUnreadReceiveQueue: function (socketIndex) {
-    return browserSocket.getBrowserSocketHasUnreadReceiveQueue(socketIndex);
+  GetBrowserSocketHasUnreadPayloadQueue: function (socketIndex) {
+    return browserSocket.getBrowserSocketHasUnreadPayloadQueue(socketIndex);
   },
 
-  BrowserSocketReadReceiveQueue: function (socketIndex, byteBufferPtr, byteBufferLength) {
-    return browserSocket.browserSocketReadReceiveQueue(socketIndex, byteBufferPtr, byteBufferLength);
+  BrowserSocketReadPayloadQueue: function (socketIndex, payloadBytesBufferPtr, payloadBytesBufferLength) {
+    return browserSocket.browserSocketReadPayloadQueue(socketIndex, payloadBytesBufferPtr, payloadBytesBufferLength);
   },
 
   BrowserSocketConnect: function (serverAddressPtr) {
@@ -76,8 +76,8 @@ const library = {
     return browserSocket.browserSocketConnect(serverAddress);
   },
 
-  BrowserSocketSend: function (socketIndex, bytesToSendPtr, bytesToSendCount) {
-    const bytesToSend = HEAPU8.buffer.slice(bytesToSendPtr, bytesToSendPtr + bytesToSendCount);
+  BrowserSocketSend: function (socketIndex, payloadBytesPtr, payloadBytesCount) {
+    const bytesToSend = HEAPU8.buffer.slice(payloadBytesPtr, payloadBytesPtr + payloadBytesCount);
     browserSocket.browserSocketSend(socketIndex, bytesToSend);
   },
 

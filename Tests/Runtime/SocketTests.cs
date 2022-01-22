@@ -21,7 +21,7 @@ namespace BananaParty.WebSocketClient.Tests
             _socket = new("ws://echo.websocket.events");
             Assert.IsFalse(_socket.IsConnected, $"{nameof(_socket.IsConnected)} is {true} immediately after creation.");
             _socket.Connect();
-            Assert.IsFalse(_socket.HasUnreadReceiveQueue, $"{nameof(_socket.HasUnreadReceiveQueue)} is {true} immediately after creation.");
+            Assert.IsFalse(_socket.HasUnreadPayloadQueue, $"{nameof(_socket.HasUnreadPayloadQueue)} is {true} immediately after creation.");
             yield return new WaitWhile(() => !_socket.IsConnected, ConnectTimeoutThreshold);
             Assert.IsTrue(_socket.IsConnected, $"{nameof(_socket.Connect)} did not flip {nameof(_socket.IsConnected)} to {true} within {nameof(ConnectTimeoutThreshold)} of {ConnectTimeoutThreshold} seconds.");
         }
@@ -72,17 +72,17 @@ namespace BananaParty.WebSocketClient.Tests
         /// </summary>
         private IEnumerator SkipFirstMessage()
         {
-            yield return new WaitWhile(() => !_socket.HasUnreadReceiveQueue, ReceiveTimeoutThreshold);
-            Assert.IsTrue(_socket.HasUnreadReceiveQueue, "Service advertising trash message did not arrive.");
-            _socket.ReadReceiveQueue();
+            yield return new WaitWhile(() => !_socket.HasUnreadPayloadQueue, ReceiveTimeoutThreshold);
+            Assert.IsTrue(_socket.HasUnreadPayloadQueue, "Service advertising trash message did not arrive.");
+            _socket.ReadPayloadQueue();
         }
 
         private IEnumerator TestEcho(byte[] bytesToSend)
         {
             _socket.Send(bytesToSend);
-            yield return new WaitWhile(() => !_socket.HasUnreadReceiveQueue, ReceiveTimeoutThreshold);
-            Assert.IsTrue(_socket.HasUnreadReceiveQueue, $"Timeout waiting for message. {_socket.HasUnreadReceiveQueue} did not flip to {true}.");
-            byte[] receivedBytes = _socket.ReadReceiveQueue();
+            yield return new WaitWhile(() => !_socket.HasUnreadPayloadQueue, ReceiveTimeoutThreshold);
+            Assert.IsTrue(_socket.HasUnreadPayloadQueue, $"Timeout waiting for message. {_socket.HasUnreadPayloadQueue} did not flip to {true}.");
+            byte[] receivedBytes = _socket.ReadPayloadQueue();
             Assert.IsTrue(bytesToSend.SequenceEqual(receivedBytes), $"Received corrupted data from echo. Expected {bytesToSend.Length} bytes, but received {receivedBytes.Length}.");
         }
 
