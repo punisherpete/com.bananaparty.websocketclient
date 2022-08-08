@@ -1,4 +1,4 @@
-# com.bananaparty.websocketclient - Work in progress  
+# com.bananaparty.websocketclient  
   
 Unity package. Fully cross-platform WebSocket client library.  
 Does not reference Unity Engine, so it could be used in a regular C# project.  
