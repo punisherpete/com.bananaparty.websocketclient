@@ -9,5 +9,4 @@ Click the "+" sign on top left corner -> "Add package from git URL..."
 Paste this: `https://github.com/forcepusher/com.bananaparty.websocketclient.git#1.1.0`  
 See minimum required Unity version in the `package.json` file.  
   
-## Work in progress.  
-Support us at https://www.patreon.com/bananaparty
+## Work in progress.
